@@ -14,32 +14,37 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y \
-        build-essential \
-        cmake \
-        libgtest-dev \
-        googletest \
-        g++ \
-        pkg-config
+          build-essential \
+          cmake \
+          g++ \
+          pkg-config \
+          libgtest-dev \
+          libgmock-dev \
+          googletest
         
     - name: Build and Install GTest
       run: |
-        sudo apt-get update
-        sudo apt-get install -y libgtest-dev googletest
         cd /usr/src/googletest
-        sudo cmake -S . -B build
+        sudo cmake -S . -B build -DBUILD_GMOCK=OFF
         sudo cmake --build build
-        sudo cp build/lib/libgtest*.a /usr/lib
+        sudo cmake --install build
+        sudo ldconfig
         
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-      
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release
+        
     - name: Build project
-      run: cmake --build build --config Release --parallel 2
-      
+      run: |
+        cd build
+        cmake --build . --config Release --parallel 2
+        
     - name: Run tests
       run: |
         cd build
