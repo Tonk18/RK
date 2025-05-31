@@ -21,7 +21,9 @@ jobs:
         build-essential \
         cmake \
         libgtest-dev \
-        libgtest-static
+        googletest \
+        g++ \
+        pkg-config
         
     - name: Build GTest
       run: |
