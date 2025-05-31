@@ -1,3 +1,4 @@
+find_package(GTest REQUIRED)
 cmake_minimum_required(VERSION 3.10)
 project(StrategyPattern LANGUAGES CXX) 
 
