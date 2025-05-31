@@ -25,10 +25,16 @@ jobs:
         g++ \
         pkg-config
         
-    - name: Install GTest
+    - name: Build and Install GTest
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgtest-dev libgtest-static
+        sudo apt-get install -y libgtest-dev cmake
+        cd /usr/src/googletest
+        sudo cmake -S . -B build -DBUILD_SHARED_LIBS=OFF
+        sudo cmake --build build
+        sudo cp build/lib/libgtest.a /usr/lib
+        sudo cp build/lib/libgtest_main.a /usr/lib
+        sudo cp -r googletest/include/gtest /usr/include
         
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release
