@@ -25,12 +25,10 @@ jobs:
         g++ \
         pkg-config
         
-    - name: Build GTest
+    - name: Install GTest
       run: |
-        cd /usr/src/gtest
-        sudo cmake CMakeLists.txt
-        sudo make
-        sudo cp *.a /usr/lib
+        sudo apt-get update
+        sudo apt-get install -y libgtest-dev libgtest-static
         
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release
