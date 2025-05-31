@@ -1,0 +1,59 @@
+name: Build and Package
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Установка зависимостей
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake libgtest-dev
+        
+    - name: Сборка GTest
+      run: |
+        cd /usr/src/gtest
+        sudo cmake CMakeLists.txt
+        sudo make
+        sudo cp *.a /usr/lib
+        
+    - name: Конфигурация CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      
+    - name: Сборка
+      run: cmake --build build --config Release
+      
+    - name: Запуск тестов
+      run: cd build && ctest --output-on-failure
+      
+    - name: Создание DEB пакета
+      run: |
+        mkdir -p strategy-package/usr/bin
+        cp build/strategy_demo strategy-package/usr/bin/
+        mkdir -p strategy-package/DEBIAN
+        echo "Package: strategy-demo" > strategy-package/DEBIAN/control
+        echo "Version: 1.0" >> strategy-package/DEBIAN/control
+        echo "Section: base" >> strategy-package/DEBIAN/control
+        echo "Priority: optional" >> strategy-package/DEBIAN/control
+        echo "Architecture: amd64" >> strategy-package/DEBIAN/control
+        echo "Maintainer: Your Name <your.email@example.com>" >> strategy-package/DEBIAN/control
+        echo "Description: Strategy Pattern Demo" >> strategy-package/DEBIAN/control
+        dpkg-deb --build strategy-package
+        mkdir -p dist
+        mv strategy-package.deb dist/strategy-demo_1.0_amd64.deb
+        
+    - name: Загрузка артефакта
+      uses: actions/upload-artifact@v2
+      with:
+        name: strategy-package
+        path: dist/strategy-demo_1.0_amd64.deb
+        
+    - name: Создание Release
+      if: github.ref == 'refs/heads/main'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/strategy-demo_1.0_amd64.deb
