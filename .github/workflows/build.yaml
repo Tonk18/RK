@@ -1,59 +1,83 @@
-name: Build and Package
+name: Build and Package Strategy Pattern
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v4
     
-    - name: Установка зависимостей
+    - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake libgtest-dev
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          libgtest-dev \
+          pkg-config
         
-    - name: Сборка GTest
+    - name: Build GTest
       run: |
         cd /usr/src/gtest
         sudo cmake CMakeLists.txt
         sudo make
         sudo cp *.a /usr/lib
         
-    - name: Конфигурация CMake
+    - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=Release
       
-    - name: Сборка
-      run: cmake --build build --config Release
+    - name: Build project
+      run: cmake --build build --config Release --parallel 2
       
-    - name: Запуск тестов
-      run: cd build && ctest --output-on-failure
-      
-    - name: Создание DEB пакета
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
+        
+    - name: Create DEB package
       run: |
         mkdir -p strategy-package/usr/bin
         cp build/strategy_demo strategy-package/usr/bin/
+        
         mkdir -p strategy-package/DEBIAN
-        echo "Package: strategy-demo" > strategy-package/DEBIAN/control
-        echo "Version: 1.0" >> strategy-package/DEBIAN/control
-        echo "Section: base" >> strategy-package/DEBIAN/control
-        echo "Priority: optional" >> strategy-package/DEBIAN/control
-        echo "Architecture: amd64" >> strategy-package/DEBIAN/control
-        echo "Maintainer: Your Name <your.email@example.com>" >> strategy-package/DEBIAN/control
-        echo "Description: Strategy Pattern Demo" >> strategy-package/DEBIAN/control
+        cat <<EOF > strategy-package/DEBIAN/control
+        Package: strategy-demo
+        Version: 1.0-$(date +%Y%m%d%H%M)
+        Section: devel
+        Priority: optional
+        Architecture: amd64
+        Maintainer: Your Name <your.email@example.com>
+        Description: Demonstration of Strategy Pattern implementation
+        Homepage: https://github.com/yourusername/strategy-pattern
+        EOF
+        
         dpkg-deb --build strategy-package
         mkdir -p dist
-        mv strategy-package.deb dist/strategy-demo_1.0_amd64.deb
+        mv strategy-package.deb dist/strategy-demo.deb
         
-    - name: Загрузка артефакта
-      uses: actions/upload-artifact@v2
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
       with:
         name: strategy-package
-        path: dist/strategy-demo_1.0_amd64.deb
+        path: dist/strategy-demo.deb
+        retention-days: 5
         
-    - name: Создание Release
+    - name: Create Release
       if: github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
       with:
-        files: dist/strategy-demo_1.0_amd64.deb
+        files: dist/strategy-demo.deb
+        body: |
+          Automatic build of Strategy Pattern demo
+          Includes:
+          - Executable binary
+          - DEB package
+        draft: false
+        prerelease: false
