@@ -7,7 +7,7 @@
 class Strategy {
 public:
     Strategy() = default;
-    virtual ~Strategy() = default;
+    virtual ~Strategy() = default;  
     virtual void algorithmInterface() = 0;
 };
 
